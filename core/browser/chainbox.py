@@ -109,7 +109,7 @@ class Chainbox:
 
             # Кнопка подтверждения (создаёт кошелёк)
             self.ads.page.get_by_role('button', name='Encrypted Storage').click()
-            random_sleep(3, 5)
+            random_sleep(5, 7)
 
             logger.success(f'{self.ads.profile_number}: Кошелёк Chainbox успешно импортирован! 🎯')
 

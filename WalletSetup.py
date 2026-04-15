@@ -45,7 +45,7 @@ def worker(account: Account) -> None:
 
             bot_wrapper = types.SimpleNamespace(account=account)
             cell_value_to_txt(bot_wrapper, 'SUCCESS', STATUS_FILE)
-            logger.success(f'Активность завершена! Статусы в {STATUS_FILE}. 🔥')
+            logger.success(f'{account.profile_number}: Кошелёк успешно создан! 🎯')
             success = True
 
         except Exception as e:
@@ -98,7 +98,7 @@ def main():
         logger.info(f'Ожидание перед следующим циклом {cycle_pause / 60:.0f} минут!')
         random_sleep(cycle_pause)
 
-
+    logger.success(f'Активность завершена! Статусы в {STATUS_FILE}. 🔥')
 
 
 if __name__ == '__main__':

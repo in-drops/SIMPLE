@@ -109,7 +109,7 @@ class Chainbox:
 
             # Кнопка подтверждения (создаёт кошелёк)
             self.ads.page.get_by_role('button', name='Encrypted Storage').click()
-            random_sleep(5, 7)
+            random_sleep(5, 8)
 
             logger.success(f'{self.ads.profile_number}: Кошелёк Chainbox успешно импортирован! 🎯')
 
@@ -234,19 +234,103 @@ class Chainbox:
         except Exception as e:
             logger.error(f'{self.ads.profile_number}: Ошибка авторизации Chainbox: {e}')
 
-    def wait_for_wallet_page(self, timeout: int = 10) -> Optional[Page]:
-        """Ожидание notification-страницы кошелька при подтверждении транзакции на сайте"""
-        for _ in range(int(timeout * 2)):
+    def wait_for_popup(self, url_contains: str = None, timeout: int = 15,
+                       seen_pages: set = None) -> Optional[Page]:
+        """
+        Ожидает popup-страницу Chainbox с хэш-роутом действия.
+        Chainbox НЕ использует notification URL — открывает popup.html с хэшами:
+          #/connection/wallet, #/switch_ethereum_chain, #/message/sign,
+          #/sign/..., #/transaction/..., #/approval/...
+
+        seen_pages — множество id уже обработанных страниц, чтобы не вернуть тот же popup повторно.
+        """
+        popup_hashes = ['/connection/', '/message/', '/sign/', '/transaction/', '/approval/',
+                        '/switch_ethereum_chain', '/add_ethereum_chain']
+
+        for _ in range(timeout):
             for page in self.ads.context.pages:
                 try:
                     url = page.url
+                    page_id = id(page)
                 except Exception:
                     continue
-                if (
-                    'chrome-extension://' in url
-                    and self.EXTENSION_ID in url
-                    and 'notification' in url.lower()
-                ):
-                    return page
-            time.sleep(0.5)
+                if seen_pages and page_id in seen_pages:
+                    continue
+                if 'chrome-extension://' not in url or self.EXTENSION_ID not in url:
+                    continue
+                if url_contains:
+                    if url_contains.lower() in url.lower():
+                        return page
+                else:
+                    for pattern in popup_hashes:
+                        if pattern in url:
+                            return page
+            time.sleep(1)
         return None
+
+    def universal_confirm(self, windows: int = 1) -> None:
+        """
+        Подтверждение popup-запросов Chainbox.
+        Обрабатывает: connection, chain switch, sign message, transaction, approval.
+
+        Кнопки по типу popup (из тестирования task.simplechain.com):
+          #/connection/wallet       → Connect
+          #/switch_ethereum_chain   → Agree
+          #/add_ethereum_chain      → Agree
+          #/message/sign            → Confirm  (Signature Request — sign in)
+          #/sign/...                → Sign, Confirm
+          #/transaction/...         → Confirm, Approve
+          #/approval/...            → Approve, Confirm
+        """
+        btn_map = {
+            '/connection/': ['Connect', 'Allow', 'Confirm'],
+            '/switch_ethereum_chain': ['Agree', 'Allow', 'Confirm'],
+            '/add_ethereum_chain': ['Agree', 'Allow', 'Confirm'],
+            '/message/': ['Confirm', 'Sign', 'OK'],
+            '/sign/': ['Sign', 'Confirm', 'OK'],
+            '/transaction/': ['Confirm', 'Approve', 'OK'],
+            '/approval/': ['Approve', 'Confirm', 'Allow'],
+        }
+        default_candidates = ['Connect', 'Agree', 'Confirm', 'Sign', 'Approve', 'Allow', 'OK']
+
+        seen_pages: set = set()
+
+        for i in range(windows):
+            random_sleep(3, 5)
+
+            popup_page = self.wait_for_popup(timeout=15, seen_pages=seen_pages)
+            if not popup_page:
+                logger.warning(f'{self.ads.profile_number}: Chainbox popup #{i + 1} не найден')
+                return
+
+            seen_pages.add(id(popup_page))
+            url = popup_page.url
+            logger.info(f'{self.ads.profile_number}: Chainbox popup #{i + 1}: {url}')
+
+            # Определяем нужные кнопки по URL
+            candidates = default_candidates
+            for pattern, btns in btn_map.items():
+                if pattern in url:
+                    candidates = btns
+                    break
+
+            clicked = False
+            for btn_name in candidates:
+                try:
+                    btn = popup_page.get_by_role('button', name=btn_name)
+                    if btn.count() > 0 and btn.first.is_visible():
+                        # Ждём пока кнопка станет enabled (до 30 сек)
+                        for __ in range(30):
+                            if btn.first.is_enabled():
+                                break
+                            time.sleep(1)
+                        btn.first.click()
+                        random_sleep(2, 3)
+                        clicked = True
+                        logger.success(f'{self.ads.profile_number}: Chainbox подтверждено: "{btn_name}"')
+                        break
+                except Exception:
+                    pass
+
+            if not clicked:
+                logger.error(f'{self.ads.profile_number}: Не удалось подтвердить Chainbox popup (кнопка не найдена). URL: {url}')

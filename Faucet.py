@@ -153,6 +153,7 @@ def accounts_filter(accounts) -> list:
 
 def _do_claim(bot: Bot) -> bool:
     # Шаг 1: получить UUID и картинку капчи
+    random_sleep(1, 3)
     captcha_info = _get_captcha_info(bot.account)
     if captcha_info is None:
         logger.error(f'{bot.account.profile_number} Не удалось получить данные фосета (getCaptchaImage)')
@@ -264,6 +265,7 @@ def worker(account) -> None:
         success = claim_faucet(bot)
         if success:
             cell_date_to_txt(bot, FILE_FAUCET_DATE)
+            logger.success('Фосет завершён 🔥')
 
 
 # ---------------------------------------------------------------------------
@@ -297,8 +299,6 @@ def main():
         logger.success(f'Цикл {cycle + 1}/{cycle_amount} завершён ✅')
         if cycle < cycle_amount - 1:
             random_sleep(cycle_pause)
-
-    logger.success('Фосет завершён 🔥')
 
 
 if __name__ == '__main__':

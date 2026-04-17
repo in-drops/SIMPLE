@@ -288,7 +288,9 @@ def main():
         active = accounts_filter(accounts)
         if not active:
             logger.warning('Все аккаунты уже получили фосет — кулдаун не истёк!')
-            break
+            if cycle < cycle_amount - 1:
+                random_sleep(cycle_pause)
+            continue
 
         logger.info(f'Активных аккаунтов для фосета: {len(active)}')
 

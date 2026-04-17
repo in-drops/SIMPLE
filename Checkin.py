@@ -399,7 +399,9 @@ def main():
         active = accounts_filter(accounts)
         if not active:
             logger.warning('Все аккаунты уже сделали чек-ин — кулдаун не истёк!')
-            break
+            if cycle < cycle_amount - 1:
+                random_sleep(cycle_pause)
+            continue
 
         logger.info(f'Активных аккаунтов для чек-ина: {len(active)}')
 

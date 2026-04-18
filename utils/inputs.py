@@ -329,7 +329,7 @@ def get_date_from_txt(account: Account, filename: str) -> datetime:
 
 
 
-def cell_value_to_txt(bot: Bot, value: int | float | str, filename: str) -> None:
+def cell_value_to_txt(bot, value: int | float | str, filename: str) -> None:
     filepath = DATA_DIR / filename
     profile_number = bot.account.profile_number
     wallet_address = bot.account.address

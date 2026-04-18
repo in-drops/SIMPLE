@@ -35,14 +35,30 @@
 
 ## Обновление 15.04.26:
 
-- `Checkin.py` (API) — Daily Check-in + Visit Official Website на https://task.simplechain.com
-    - ВАЖНО!!! Данный скрипт делает Daily Checkin через Апи без подключения Twitter. Хотя, если зайти через браузер, пока Twitter не подключишь, этот Daily Checkin нельзя делать. Поэтому прежде чем запускать скрипт, сначала зарегистрируйтесь по кошельку на сайте по своим рефкам. И потом подвяжите обязательно Twitter.
+- `Checkin.py` — Daily Check-in + Visit Official Website на https://task.simplechain.com
     - Ежедневный чек-ин и посещение сайта (для аккаунтов с привязанным Twitter+Telegram/Discord)
     - Сброс в 00:00 UTC (03:00 МСК), кулдаун 23 часа
     - Бонусы за стрик: 3/7/14/30/50/60/80 дней
     - Фильтр: `MAX_CHECKINS = 30` — скрипт пропускает аккаунты, достигшие лимита (0 = без лимита)
 
-- `Faucet.py` (API) — Daily Faucet на https://www.simplechain.com/developer/faucet (2captcha)
-    - Кран жёстко лагает пока!
+- `Faucet.py` — Daily Faucet на https://www.simplechain.com/developer/faucet
     - Ежедневный клейм тестовых токенов (0.1/день), кулдаун 24 часа
     - Решение капчи через 2Captcha (ключ в `.env`)
+
+
+## Обновление 16.04.26:
+
+- `TwitterConnect.py` — привязка Twitter + выполнение Twitter-заданий на https://task.simplechain.com
+    - Привязывает купленный Twitter к кошельку через OAuth 2.0
+    - Выполняет активные задания: Follow on X (+300 pts), X Retweet (+150 pts), Reply to tweet (+100 pts)
+    - Данные Twitter аккаунтов берутся из `config/data/twitter_accounts.txt`
+    - Формат файла: `profile_number:username:password:auth_token:ct0`
+    - Пропускает профили, у которых Twitter уже привязан или задание выполнено
+
+
+## Обновление 18.04.26:
+
+- `Transfers.py` (API) — отправляет SRW на случайные EVM-адреса для наработки on-chain активности
+    - запускается только для аккаунтов, у которых есть хотя бы один успешный фосет
+    - за один запуск делает 1–5 трансферов, каждый на 1–5% от баланса
+    - фильтр на общее количество трансферов: `TRANSFER_FILTER_LIMIT` вверху скрипта (по умолчанию 20, можно менять)
